@@ -225,6 +225,7 @@ class SpatialTransformer(nn.Module):
     """
     def __init__(self, in_channels, n_heads, d_head,
                  depth=1, dropout=0., context_dim=None):
+        import ipdb; ipdb.set_trace()
         super().__init__()
         self.in_channels = in_channels
         inner_dim = n_heads * d_head
@@ -249,11 +250,13 @@ class SpatialTransformer(nn.Module):
 
     def forward(self, x, context=None):
         # note: if no context is given, cross-attention defaults to self-attention
+        import ipdb; ipdb.set_trace()
         b, c, h, w = x.shape
         x_in = x
         x = self.norm(x)
         x = self.proj_in(x)
         x = rearrange(x, 'b c h w -> b (h w) c')
+        # b=batch size, (height, width)-> sequence length, c=channel size 
         for block in self.transformer_blocks:
             x = block(x, context=context)
         x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w)

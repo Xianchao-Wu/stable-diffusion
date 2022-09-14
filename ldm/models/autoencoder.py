@@ -29,6 +29,7 @@ class VQModel(pl.LightningModule):
                  sane_index_shape=False, # tell vector quantizer to return indices as bhw
                  use_ema=False
                  ):
+        import ipdb; ipdb.set_trace()
         super().__init__()
         self.embed_dim = embed_dim
         self.n_embed = n_embed
@@ -146,7 +147,7 @@ class VQModel(pl.LightningModule):
         xrec, qloss, ind = self(x, return_pred_indices=True)
 
         if optimizer_idx == 0:
-            # autoencode
+            # autoencode, train encoder+decoder+logvar
             aeloss, log_dict_ae = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train",
                                             predicted_indices=ind)
@@ -155,7 +156,7 @@ class VQModel(pl.LightningModule):
             return aeloss
 
         if optimizer_idx == 1:
-            # discriminator
+            # train the discriminator
             discloss, log_dict_disc = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train")
             self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True)
@@ -281,7 +282,6 @@ class VQModelInterface(VQModel):
         dec = self.decoder(quant)
         return dec
 
-
 class AutoencoderKL(pl.LightningModule):
     def __init__(self,
                  ddconfig,
@@ -293,11 +293,14 @@ class AutoencoderKL(pl.LightningModule):
                  colorize_nlabels=None,
                  monitor=None,
                  ):
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         self.image_key = image_key
-        self.encoder = Encoder(**ddconfig)
+        self.encoder = Encoder(**ddconfig) # NOTE 
         self.decoder = Decoder(**ddconfig)
-        self.loss = instantiate_from_config(lossconfig)
+        self.loss = instantiate_from_config(lossconfig) # TODO important
+        #import ipdb; ipdb.set_trace(); 一个感知loss + 一个对抗loss 
+        # a perceptual loss + an adversertial loss
         assert ddconfig["double_z"]
         self.quant_conv = torch.nn.Conv2d(2*ddconfig["z_channels"], 2*embed_dim, 1)
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
@@ -306,7 +309,7 @@ class AutoencoderKL(pl.LightningModule):
             assert type(colorize_nlabels)==int
             self.register_buffer("colorize", torch.randn(3, colorize_nlabels, 1, 1))
         if monitor is not None:
-            self.monitor = monitor
+            self.monitor = monitor # 'val/rec_loss'
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
 
@@ -322,24 +325,25 @@ class AutoencoderKL(pl.LightningModule):
         print(f"Restored from {path}")
 
     def encode(self, x):
-        h = self.encoder(x)
-        moments = self.quant_conv(h)
-        posterior = DiagonalGaussianDistribution(moments)
+        h = self.encoder(x) # h.shape=[1, 6, 64, 64]
+        moments = self.quant_conv(h) # Conv2d(6, 6, kernel_size=(1,1), stride=(1,1)), -> [1, 6, 64, 64]
+        posterior = DiagonalGaussianDistribution(moments) # 这是创建了一个高斯分布，这个分布的名字是"posterior"!
         return posterior
 
     def decode(self, z):
         z = self.post_quant_conv(z)
         dec = self.decoder(z)
-        return dec
+        return dec # [1, 3, 256, 256]
 
     def forward(self, input, sample_posterior=True):
+        import ipdb; ipdb.set_trace()
         posterior = self.encode(input)
         if sample_posterior:
-            z = posterior.sample()
+            z = posterior.sample() # Here, [1, 3, 64, 64], x = mu + sigma * z; 在进decoder之前，搞的采样，然后把z给decoder! NOTE
         else:
-            z = posterior.mode()
+            z = posterior.mode() 
         dec = self.decode(z)
-        return dec, posterior
+        return dec, posterior # dec.shape=[1, 3, 256, 256] same with input.shape!
 
     def get_input(self, batch, k):
         x = batch[k]
@@ -349,9 +353,10 @@ class AutoencoderKL(pl.LightningModule):
         return x
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        inputs = self.get_input(batch, self.image_key)
-        reconstructions, posterior = self(inputs)
-
+        import ipdb; ipdb.set_trace()
+        inputs = self.get_input(batch, self.image_key) # [1, 256, 256, 3] to [1, 3, 256, 256]
+        reconstructions, posterior = self(inputs) # call the forward method of this class! NOTE
+        # TODO 这儿可以优化，因为是同一个batch进来，其实不需要再次self(inputs)了！！！
         if optimizer_idx == 0:
             # train encoder+decoder+logvar
             aeloss, log_dict_ae = self.loss(inputs, reconstructions, posterior, optimizer_idx, self.global_step,
@@ -364,12 +369,13 @@ class AutoencoderKL(pl.LightningModule):
             # train the discriminator
             discloss, log_dict_disc = self.loss(inputs, reconstructions, posterior, optimizer_idx, self.global_step,
                                                 last_layer=self.get_last_layer(), split="train")
-
+            # discloss = discriminator loss
             self.log("discloss", discloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
             self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=False)
             return discloss
 
     def validation_step(self, batch, batch_idx):
+        import ipdb; ipdb.set_trace() # NOTE this is validation step, so no grad is required!!! only forward!
         inputs = self.get_input(batch, self.image_key)
         reconstructions, posterior = self(inputs)
         aeloss, log_dict_ae = self.loss(inputs, reconstructions, posterior, 0, self.global_step,
@@ -384,12 +390,15 @@ class AutoencoderKL(pl.LightningModule):
         return self.log_dict
 
     def configure_optimizers(self):
+        import ipdb; ipdb.set_trace()
         lr = self.learning_rate
+        # for training autoencoder (ae), with encoder, decoder, quant_conv and post_quant_conv (four modules) NOTE
         opt_ae = torch.optim.Adam(list(self.encoder.parameters())+
                                   list(self.decoder.parameters())+
                                   list(self.quant_conv.parameters())+
                                   list(self.post_quant_conv.parameters()),
                                   lr=lr, betas=(0.5, 0.9))
+        # for training discriminator, only one group of parameters!
         opt_disc = torch.optim.Adam(self.loss.discriminator.parameters(),
                                     lr=lr, betas=(0.5, 0.9))
         return [opt_ae, opt_disc], []

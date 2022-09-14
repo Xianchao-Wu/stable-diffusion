@@ -82,6 +82,7 @@ class Downsample(nn.Module):
 class ResnetBlock(nn.Module):
     def __init__(self, *, in_channels, out_channels=None, conv_shortcut=False,
                  dropout, temb_channels=512):
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         self.in_channels = in_channels
         out_channels = in_channels if out_channels is None else out_channels
@@ -119,6 +120,7 @@ class ResnetBlock(nn.Module):
                                                     padding=0)
 
     def forward(self, x, temb):
+        #import ipdb; ipdb.set_trace()
         h = x
         h = self.norm1(h)
         h = nonlinearity(h)
@@ -199,7 +201,7 @@ class AttnBlock(nn.Module):
 
         h_ = self.proj_out(h_)
 
-        return x+h_
+        return x+h_ # residual connection
 
 
 def make_attn(in_channels, attn_type="vanilla"):
@@ -370,6 +372,7 @@ class Encoder(nn.Module):
                  attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
                  resolution, z_channels, double_z=True, use_linear_attn=False, attn_type="vanilla",
                  **ignore_kwargs):
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         if use_linear_attn: attn_type = "linear"
         self.ch = ch
@@ -402,8 +405,8 @@ class Encoder(nn.Module):
                                          dropout=dropout))
                 block_in = block_out
                 if curr_res in attn_resolutions:
-                    attn.append(make_attn(block_in, attn_type=attn_type))
-            down = nn.Module()
+                    attn.append(make_attn(block_in, attn_type=attn_type)) # NOTE attention!
+            down = nn.Module() # local 'down', different with 'self.down'!
             down.block = block
             down.attn = attn
             if i_level != self.num_resolutions-1:
@@ -433,8 +436,8 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # timestep embedding
+        import ipdb; ipdb.set_trace()
         temb = None
-
         # downsampling
         hs = [self.conv_in(x)]
         for i_level in range(self.num_resolutions):
@@ -456,14 +459,14 @@ class Encoder(nn.Module):
         h = self.norm_out(h)
         h = nonlinearity(h)
         h = self.conv_out(h)
-        return h
-
+        return h # e.g., [1, 6, 64, 64], after "Encoder"
 
 class Decoder(nn.Module):
     def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,
                  attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
                  resolution, z_channels, give_pre_end=False, tanh_out=False, use_linear_attn=False,
                  attn_type="vanilla", **ignorekwargs):
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         if use_linear_attn: attn_type = "linear"
         self.ch = ch
@@ -534,8 +537,8 @@ class Decoder(nn.Module):
 
     def forward(self, z):
         #assert z.shape[1:] == self.z_shape[1:]
+        import ipdb; ipdb.set_trace()
         self.last_z_shape = z.shape
-
         # timestep embedding
         temb = None
 
@@ -565,7 +568,7 @@ class Decoder(nn.Module):
         h = self.conv_out(h)
         if self.tanh_out:
             h = torch.tanh(h)
-        return h
+        return h # [1, 6, 64, 64]
 
 
 class SimpleDecoder(nn.Module):

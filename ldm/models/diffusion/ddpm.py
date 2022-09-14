@@ -72,6 +72,7 @@ class DDPM(pl.LightningModule):
                  learn_logvar=False,
                  logvar_init=0.,
                  ):
+        import ipdb; ipdb.set_trace()
         super().__init__()
         assert parameterization in ["eps", "x0"], 'currently only supporting "eps" and "x0"'
         self.parameterization = parameterization
@@ -85,7 +86,7 @@ class DDPM(pl.LightningModule):
         self.use_positional_encodings = use_positional_encodings
         self.model = DiffusionWrapper(unet_config, conditioning_key)
         count_params(self.model, verbose=True)
-        self.use_ema = use_ema
+        self.use_ema = use_ema # exponentional moving average, alike 0.999*old_model + 0.001*new_model for updating TODO
         if self.use_ema:
             self.model_ema = LitEma(self.model)
             print(f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
@@ -102,7 +103,7 @@ class DDPM(pl.LightningModule):
             self.monitor = monitor
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys, only_model=load_only_unet)
-
+        # TODO important
         self.register_schedule(given_betas=given_betas, beta_schedule=beta_schedule, timesteps=timesteps,
                                linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
 
@@ -116,6 +117,7 @@ class DDPM(pl.LightningModule):
 
     def register_schedule(self, given_betas=None, beta_schedule="linear", timesteps=1000,
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
+        import ipdb; ipdb.set_trace()
         if exists(given_betas):
             betas = given_betas
         else:
@@ -277,6 +279,7 @@ class DDPM(pl.LightningModule):
                 extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise)
 
     def get_loss(self, pred, target, mean=True):
+        import ipdb; ipdb.set_trace()
         if self.loss_type == 'l1':
             loss = (target - pred).abs()
             if mean:
@@ -292,13 +295,14 @@ class DDPM(pl.LightningModule):
         return loss
 
     def p_losses(self, x_start, t, noise=None):
+        import ipdb; ipdb.set_trace()
         noise = default(noise, lambda: torch.randn_like(x_start))
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
         model_out = self.model(x_noisy, t)
 
         loss_dict = {}
         if self.parameterization == "eps":
-            target = noise
+            target = noise # Here! predict the noise, epsilon!
         elif self.parameterization == "x0":
             target = x_start
         else:
@@ -340,6 +344,7 @@ class DDPM(pl.LightningModule):
         return loss, loss_dict
 
     def training_step(self, batch, batch_idx):
+        import ipdb; ipdb.set_trace()
         loss, loss_dict = self.shared_step(batch)
 
         self.log_dict(loss_dict, prog_bar=True,
@@ -435,6 +440,7 @@ class LatentDiffusion(DDPM):
                  scale_factor=1.0,
                  scale_by_std=False,
                  *args, **kwargs):
+        import ipdb; ipdb.set_trace()
         self.num_timesteps_cond = default(num_timesteps_cond, 1)
         self.scale_by_std = scale_by_std
         assert self.num_timesteps_cond <= kwargs['timesteps']
@@ -445,6 +451,8 @@ class LatentDiffusion(DDPM):
             conditioning_key = None
         ckpt_path = kwargs.pop("ckpt_path", None)
         ignore_keys = kwargs.pop("ignore_keys", [])
+
+        import ipdb; ipdb.set_trace()
         super().__init__(conditioning_key=conditioning_key, *args, **kwargs)
         self.concat_mode = concat_mode
         self.cond_stage_trainable = cond_stage_trainable
@@ -457,8 +465,13 @@ class LatentDiffusion(DDPM):
             self.scale_factor = scale_factor
         else:
             self.register_buffer('scale_factor', torch.tensor(scale_factor))
-        self.instantiate_first_stage(first_stage_config)
-        self.instantiate_cond_stage(cond_stage_config)
+
+        import ipdb; ipdb.set_trace()
+        self.instantiate_first_stage(first_stage_config) # autoencoder, just load pretrained weights NOTE
+
+        import ipdb; ipdb.set_trace()
+        self.instantiate_cond_stage(cond_stage_config) # conditional stage (e.g., textual input)
+
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
         self.bbox_tokenizer = None  
@@ -493,6 +506,7 @@ class LatentDiffusion(DDPM):
     def register_schedule(self,
                           given_betas=None, beta_schedule="linear", timesteps=1000,
                           linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
+        import ipdb; ipdb.set_trace()
         super().register_schedule(given_betas, beta_schedule, timesteps, linear_start, linear_end, cosine_s)
 
         self.shorten_cond_schedule = self.num_timesteps_cond > 1
@@ -500,6 +514,7 @@ class LatentDiffusion(DDPM):
             self.make_cond_schedule()
 
     def instantiate_first_stage(self, config):
+        import ipdb; ipdb.set_trace()
         model = instantiate_from_config(config)
         self.first_stage_model = model.eval()
         self.first_stage_model.train = disabled_train
@@ -507,6 +522,7 @@ class LatentDiffusion(DDPM):
             param.requires_grad = False
 
     def instantiate_cond_stage(self, config):
+        import ipdb; ipdb.set_trace()
         if not self.cond_stage_trainable:
             if config == "__is_first_stage__":
                 print("Using first stage also as cond stage.")
@@ -524,7 +540,7 @@ class LatentDiffusion(DDPM):
         else:
             assert config != '__is_first_stage__'
             assert config != '__is_unconditional__'
-            model = instantiate_from_config(config)
+            model = instantiate_from_config(config) # ldm.modules.encoders.modules.ClassEmbedder=target
             self.cond_stage_model = model
 
     def _get_denoise_row_from_list(self, samples, desc='', force_no_decoder_quantization=False):
@@ -546,7 +562,7 @@ class LatentDiffusion(DDPM):
             z = encoder_posterior
         else:
             raise NotImplementedError(f"encoder_posterior of type '{type(encoder_posterior)}' not yet implemented")
-        return self.scale_factor * z
+        return self.scale_factor * z # self.scale_factor=1.0
 
     def get_learned_conditioning(self, c):
         if self.cond_stage_forward is None:
@@ -653,11 +669,15 @@ class LatentDiffusion(DDPM):
     @torch.no_grad()
     def get_input(self, batch, k, return_first_stage_outputs=False, force_c_encode=False,
                   cond_key=None, return_original_cond=False, bs=None):
+        import ipdb; ipdb.set_trace()
         x = super().get_input(batch, k)
         if bs is not None:
             x = x[:bs]
         x = x.to(self.device)
-        encoder_posterior = self.encode_first_stage(x)
+
+        encoder_posterior = self.encode_first_stage(x) # autoencoder (encode the image into latent space)
+        # encoder_posterior.shape=[1, 4, 32, 32]
+
         z = self.get_first_stage_encoding(encoder_posterior).detach()
 
         if self.model.conditioning_key is not None:
@@ -694,6 +714,7 @@ class LatentDiffusion(DDPM):
             if self.use_positional_encodings:
                 pos_x, pos_y = self.compute_latent_shifts(batch)
                 c = {'pos_x': pos_x, 'pos_y': pos_y}
+        import ipdb; ipdb.set_trace()
         out = [z, c]
         if return_first_stage_outputs:
             xrec = self.decode_first_stage(z)
@@ -863,11 +884,14 @@ class LatentDiffusion(DDPM):
             return self.first_stage_model.encode(x)
 
     def shared_step(self, batch, **kwargs):
+        import ipdb; ipdb.set_trace()
         x, c = self.get_input(batch, self.first_stage_key)
-        loss = self(x, c)
+        loss = self(x, c) # TODO calling the forward function
         return loss
 
     def forward(self, x, c, *args, **kwargs):
+        import ipdb; ipdb.set_trace()
+        # num_timesteps=1000, 
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
         if self.model.conditioning_key is not None:
             assert c is not None
@@ -877,6 +901,9 @@ class LatentDiffusion(DDPM):
                 tc = self.cond_ids[t].to(self.device)
                 c = self.q_sample(x_start=c, t=tc, noise=torch.randn_like(c.float()))
         return self.p_losses(x, c, t, *args, **kwargs)
+        # x: image, latent representation \mathcal{E}(x) in equation (2), [1, 4, 32, 32]
+        # c: condition, 
+        # t: 
 
     def _rescale_annotations(self, bboxes, crop_coordinates):  # TODO: move to dataset
         def rescale_bbox(bbox):
@@ -1010,7 +1037,9 @@ class LatentDiffusion(DDPM):
         return mean_flat(kl_prior) / np.log(2.0)
 
     def p_losses(self, x_start, cond, t, noise=None):
+        import ipdb; ipdb.set_trace()
         noise = default(noise, lambda: torch.randn_like(x_start))
+        # important TODO
         x_noisy = self.q_sample(x_start=x_start, t=t, noise=noise)
         model_output = self.apply_model(x_noisy, t, cond)
 
@@ -1359,6 +1388,7 @@ class LatentDiffusion(DDPM):
         return log
 
     def configure_optimizers(self):
+        import ipdb; ipdb.set_trace()
         lr = self.learning_rate
         params = list(self.model.parameters())
         if self.cond_stage_trainable:
@@ -1395,17 +1425,19 @@ class LatentDiffusion(DDPM):
 class DiffusionWrapper(pl.LightningModule):
     def __init__(self, diff_model_config, conditioning_key):
         super().__init__()
+        import ipdb; ipdb.set_trace()
         self.diffusion_model = instantiate_from_config(diff_model_config)
-        self.conditioning_key = conditioning_key
+        self.conditioning_key = conditioning_key # 'crossattn'
         assert self.conditioning_key in [None, 'concat', 'crossattn', 'hybrid', 'adm']
 
     def forward(self, x, t, c_concat: list = None, c_crossattn: list = None):
+        import ipdb; ipdb.set_trace()
         if self.conditioning_key is None:
             out = self.diffusion_model(x, t)
         elif self.conditioning_key == 'concat':
             xc = torch.cat([x] + c_concat, dim=1)
             out = self.diffusion_model(xc, t)
-        elif self.conditioning_key == 'crossattn':
+        elif self.conditioning_key == 'crossattn': # NOTE here:
             cc = torch.cat(c_crossattn, 1)
             out = self.diffusion_model(x, t, context=cc)
         elif self.conditioning_key == 'hybrid':
@@ -1418,7 +1450,7 @@ class DiffusionWrapper(pl.LightningModule):
         else:
             raise NotImplementedError()
 
-        return out
+        return out # [1, 4, 32, 32]
 
 
 class Layout2ImgDiffusion(LatentDiffusion):

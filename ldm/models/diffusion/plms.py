@@ -203,7 +203,7 @@ class PLMSSampler(object):
             sigma_t = torch.full((b, 1, 1, 1), sigmas[index], device=device)
             sqrt_one_minus_at = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index],device=device)
 
-            # current prediction for x_0
+            # current prediction for x_0 (formula 8) TODO
             pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
             if quantize_denoised:
                 pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
@@ -216,7 +216,8 @@ class PLMSSampler(object):
             return x_prev, pred_x0
 
         e_t = get_model_output(x, t)
-        if len(old_eps) == 0:
+        # TODO check the zhejiang U's ICLR 2022 paper
+        if len(old_eps) == 0: # equation 22 TODO
             # Pseudo Improved Euler (2nd order)
             x_prev, pred_x0 = get_x_prev_and_pred_x0(e_t, index)
             e_t_next = get_model_output(x_prev, t_next)

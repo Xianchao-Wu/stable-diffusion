@@ -24,15 +24,16 @@ class DiracDistribution(AbstractDistribution):
 class DiagonalGaussianDistribution(object):
     def __init__(self, parameters, deterministic=False):
         self.parameters = parameters
-        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)
+        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1) # 切割一下, [1, 3, 64, 64] and [1, 3, 64, 64]
         self.logvar = torch.clamp(self.logvar, -30.0, 20.0)
         self.deterministic = deterministic
         self.std = torch.exp(0.5 * self.logvar)
         self.var = torch.exp(self.logvar)
         if self.deterministic:
             self.var = self.std = torch.zeros_like(self.mean).to(device=self.parameters.device)
-
+        # 这就是构造了一个高斯分布！带有mean和var的！
     def sample(self):
+        import ipdb; ipdb.set_trace()
         x = self.mean + self.std * torch.randn(self.mean.shape).to(device=self.parameters.device)
         return x
 
@@ -48,7 +49,7 @@ class DiagonalGaussianDistribution(object):
                 return 0.5 * torch.sum(
                     torch.pow(self.mean - other.mean, 2) / other.var
                     + self.var / other.var - 1.0 - self.logvar + other.logvar,
-                    dim=[1, 2, 3])
+                    dim=[1, 2, 3]) # NOTE TODO why?
 
     def nll(self, sample, dims=[1,2,3]):
         if self.deterministic:

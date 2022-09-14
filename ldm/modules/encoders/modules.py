@@ -20,9 +20,11 @@ class AbstractEncoder(nn.Module):
 
 class ClassEmbedder(nn.Module):
     def __init__(self, embed_dim, n_classes=1000, key='class'):
+        import ipdb; ipdb.set_trace()
         super().__init__()
         self.key = key
-        self.embedding = nn.Embedding(n_classes, embed_dim)
+        self.embedding = nn.Embedding(n_classes, embed_dim) # n_classes=1000 for the 1K labels in image-net!
+        # embed_dim=512
 
     def forward(self, batch, key=None):
         if key is None:

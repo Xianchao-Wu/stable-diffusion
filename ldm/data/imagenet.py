@@ -25,11 +25,14 @@ def synset2idx(path_to_yaml="data/index_synset.yaml"):
 
 class ImageNetBase(Dataset):
     def __init__(self, config=None):
+        #import ipdb; ipdb.set_trace()
         self.config = config or OmegaConf.create()
         if not type(self.config)==dict:
             self.config = OmegaConf.to_container(self.config)
         self.keep_orig_class_label = self.config.get("keep_orig_class_label", False)
         self.process_images = True  # if False we skip loading & processing images and self.data contains filepaths
+
+        #import ipdb; ipdb.set_trace()
         self._prepare()
         self._prepare_synset_to_human()
         self._prepare_idx_to_synset()
@@ -97,7 +100,7 @@ class ImageNetBase(Dataset):
             self.relpaths = self._filter_relpaths(self.relpaths)
             print("Removed {} files from filelist during filtering.".format(l1 - len(self.relpaths)))
 
-        self.synsets = [p.split("/")[0] for p in self.relpaths]
+        self.synsets = [p.split(os.sep)[0] for p in self.relpaths]
         self.abspaths = [os.path.join(self.datadir, p) for p in self.relpaths]
 
         unique_synsets = np.unique(self.synsets)
@@ -148,13 +151,14 @@ class ImageNetTrain(ImageNetBase):
         super().__init__(**kwargs)
 
     def _prepare(self):
+        #import ipdb; ipdb.set_trace()
         if self.data_root:
             self.root = os.path.join(self.data_root, self.NAME)
         else:
             cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
             self.root = os.path.join(cachedir, "autoencoders/data", self.NAME)
 
-        self.datadir = os.path.join(self.root, "data")
+        self.datadir = os.path.join(self.root, "data") # /root/.cache/autoencoders/data/ILSVRC2012_train/data TODO
         self.txt_filelist = os.path.join(self.root, "filelist.txt")
         self.expected_length = 1281167
         self.random_crop = retrieve(self.config, "ImageNetTrain/random_crop",
@@ -167,6 +171,7 @@ class ImageNetTrain(ImageNetBase):
             if not os.path.exists(datadir):
                 path = os.path.join(self.root, self.FILES[0])
                 if not os.path.exists(path) or not os.path.getsize(path)==self.SIZES[0]:
+                    import ipdb; ipdb.set_trace() # at requires future==0.16.0, yet pytorch-lightning requires future==0.18.2, bad...
                     import academictorrents as at
                     atpath = at.get(self.AT_HASH, datastore=self.root)
                     assert atpath == path
@@ -232,6 +237,7 @@ class ImageNetValidation(ImageNetBase):
             if not os.path.exists(datadir):
                 path = os.path.join(self.root, self.FILES[0])
                 if not os.path.exists(path) or not os.path.getsize(path)==self.SIZES[0]:
+                    import ipdb; ipdb.set_trace() # TODO
                     import academictorrents as at
                     atpath = at.get(self.AT_HASH, datastore=self.root)
                     assert atpath == path
@@ -289,7 +295,8 @@ class ImageNetSR(Dataset):
         :param data_root:
         :param random_crop:
         """
-        self.base = self.get_base()
+        #import ipdb; ipdb.set_trace()
+        self.base = self.get_base() # TODO
         assert size
         assert (size / downscale_f).is_integer()
         self.size = size
