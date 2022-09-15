@@ -41,15 +41,18 @@ class DiagonalGaussianDistribution(object):
         if self.deterministic:
             return torch.Tensor([0.])
         else:
+            # KL(p,q)=log(sigma_2/sigma_1) + [sigma_1^2 + (mu_1-mu_2)^2]/(2*sigma_2^2)-0.5
             if other is None:
+                # KL(p)=log(1/sigma_1) + [sigma_1^2 + mu_1^2]/2 - 0.5
+                #      =0.5 * [sigma_1^2 + mu_1^2 - 1 - log(sigma_1^2)]
                 return 0.5 * torch.sum(torch.pow(self.mean, 2)
                                        + self.var - 1.0 - self.logvar,
-                                       dim=[1, 2, 3])
+                                       dim=[1, 2, 3]) # Here NOTE, why?
             else:
                 return 0.5 * torch.sum(
                     torch.pow(self.mean - other.mean, 2) / other.var
                     + self.var / other.var - 1.0 - self.logvar + other.logvar,
-                    dim=[1, 2, 3]) # NOTE TODO why?
+                    dim=[1, 2, 3]) 
 
     def nll(self, sample, dims=[1,2,3]):
         if self.deterministic:
