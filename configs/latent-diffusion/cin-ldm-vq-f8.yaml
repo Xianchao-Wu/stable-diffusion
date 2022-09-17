@@ -96,3 +96,7 @@ lightning:
 
   trainer:
     benchmark: True
+    devices: 1
+    accelerator: "gpu"
+
+

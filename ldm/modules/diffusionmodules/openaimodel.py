@@ -252,8 +252,8 @@ class ResBlock(TimestepBlock):
             self._forward, (x, emb), self.parameters(), self.use_checkpoint
         )
 
-
     def _forward(self, x, emb):
+        import ipdb; ipdb.set_trace()
         if self.updown:
             in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
             h = in_rest(x)
@@ -588,6 +588,7 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
+        import ipdb; ipdb.set_trace()
         if num_head_channels == -1:
             dim_head = ch // num_heads
         else:
@@ -624,7 +625,8 @@ class UNetModel(nn.Module):
             ),
         )
         self._feature_size += ch
-
+        
+        import ipdb; ipdb.set_trace()
         self.output_blocks = nn.ModuleList([])
         for level, mult in list(enumerate(channel_mult))[::-1]:
             for i in range(num_res_blocks + 1):
@@ -680,7 +682,8 @@ class UNetModel(nn.Module):
                     ds //= 2
                 self.output_blocks.append(TimestepEmbedSequential(*layers))
                 self._feature_size += ch
-
+        
+        import ipdb; ipdb.set_trace()
         self.out = nn.Sequential(
             normalization(ch),
             nn.SiLU(),
