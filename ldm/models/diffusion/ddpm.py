@@ -84,7 +84,7 @@ class DDPM(pl.LightningModule):
         self.image_size = image_size  # try conv?
         self.channels = channels
         self.use_positional_encodings = use_positional_encodings
-        self.model = DiffusionWrapper(unet_config, conditioning_key)
+        self.model = DiffusionWrapper(unet_config, conditioning_key) # NOTE init UNetModel!
         count_params(self.model, verbose=True)
         self.use_ema = use_ema # exponentional moving average, alike 0.999*old_model + 0.001*new_model for updating TODO
         if self.use_ema:
@@ -585,7 +585,7 @@ class LatentDiffusion(DDPM):
         return self.scale_factor * z # self.scale_factor=1.0
 
     def get_learned_conditioning(self, c):
-        import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace() # encode the prompt!
         if self.cond_stage_forward is None:
             if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
                 c = self.cond_stage_model.encode(c)
@@ -1046,7 +1046,7 @@ class LatentDiffusion(DDPM):
         if isinstance(x_recon, tuple) and not return_ids:
             return x_recon[0]
         else:
-            return x_recon
+            return x_recon # e.g., [2, 4, 64, 64] in txt2img sampling
 
     def _predict_eps_from_xstart(self, x_t, t, pred_xstart):
         import ipdb; ipdb.set_trace()
@@ -1470,14 +1470,14 @@ class DiffusionWrapper(pl.LightningModule):
         assert self.conditioning_key in [None, 'concat', 'crossattn', 'hybrid', 'adm']
 
     def forward(self, x, t, c_concat: list = None, c_crossattn: list = None):
-        import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace() # in DiffusionWrapper forward
         if self.conditioning_key is None:
             out = self.diffusion_model(x, t)
         elif self.conditioning_key == 'concat':
             xc = torch.cat([x] + c_concat, dim=1)
             out = self.diffusion_model(xc, t)
         elif self.conditioning_key == 'crossattn': # NOTE here:
-            cc = torch.cat(c_crossattn, 1)
+            cc = torch.cat(c_crossattn, 1) # [2, 77, 768] = noisy tensor + prompt text tensor
             out = self.diffusion_model(x, t, context=cc)
         elif self.conditioning_key == 'hybrid':
             xc = torch.cat([x] + c_concat, dim=1)
@@ -1488,8 +1488,8 @@ class DiffusionWrapper(pl.LightningModule):
             out = self.diffusion_model(x, t, y=cc)
         else:
             raise NotImplementedError()
-
-        return out # [1, 4, 32, 32]
+        import ipdb; ipdb.set_trace() # done DiffusionWrapper forward
+        return out # [1, 4, 32, 32] or [2, 4, 64, 64] in txt2img sampling
 
 
 class Layout2ImgDiffusion(LatentDiffusion):

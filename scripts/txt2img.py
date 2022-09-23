@@ -124,7 +124,7 @@ def main():
     parser.add_argument(
         "--ddim_steps",
         type=int,
-        default=50,
+        default=5, # TODO 50
         help="number of ddim sampling steps",
     )
     parser.add_argument(
@@ -181,7 +181,7 @@ def main():
     parser.add_argument(
         "--n_samples",
         type=int,
-        default=3,
+        default=1, # TODO
         help="how many samples to produce for each given prompt. A.k.a. batch size",
     )
     parser.add_argument(
@@ -241,7 +241,7 @@ def main():
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
-
+    import ipdb; ipdb.set_trace()
     if opt.plms:
         sampler = PLMSSampler(model)
     else:
@@ -285,12 +285,13 @@ def main():
                 all_samples = list()
                 for n in trange(opt.n_iter, desc="Sampling"):
                     for prompts in tqdm(data, desc="data"):
-                        uc = None
+                        import ipdb; ipdb.set_trace()
+                        uc = None # empty text prompt's encoded tensor
                         if opt.scale != 1.0:
-                            uc = model.get_learned_conditioning(batch_size * [""])
+                            uc = model.get_learned_conditioning(batch_size * [""]) # empty text sequence
                         if isinstance(prompts, tuple):
                             prompts = list(prompts)
-                        c = model.get_learned_conditioning(prompts)
+                        c = model.get_learned_conditioning(prompts) # [1, 77, 768]
                         shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
                         samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
                                                          conditioning=c,
@@ -302,11 +303,13 @@ def main():
                                                          eta=opt.ddim_eta,
                                                          x_T=start_code)
 
-                        x_samples_ddim = model.decode_first_stage(samples_ddim)
+                        x_samples_ddim = model.decode_first_stage(samples_ddim) # NOTE call autoencoder's decoder, from [1, 4, 64, 64] back to [1, 3, 512, 512] (image recover from latent space)
                         x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
-
+                        
+                        # TODO
                         x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
+
 
                         x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
 
