@@ -33,7 +33,7 @@ class DiagonalGaussianDistribution(object):
             self.var = self.std = torch.zeros_like(self.mean).to(device=self.parameters.device)
         # 这就是构造了一个高斯分布！带有mean和var的！
     def sample(self):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         x = self.mean + self.std * torch.randn(self.mean.shape).to(device=self.parameters.device)
         return x
 

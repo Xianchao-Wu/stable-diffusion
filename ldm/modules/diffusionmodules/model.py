@@ -436,7 +436,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # timestep embedding
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         temb = None
         # downsampling
         hs = [self.conv_in(x)]
@@ -537,7 +537,7 @@ class Decoder(nn.Module):
 
     def forward(self, z):
         #assert z.shape[1:] == self.z_shape[1:]
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         self.last_z_shape = z.shape
         # timestep embedding
         temb = None

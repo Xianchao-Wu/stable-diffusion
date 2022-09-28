@@ -78,7 +78,7 @@ class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
     """
 
     def forward(self, x, emb, context=None):
-        #import ipdb; ipdb.set_trace() # TODO
+        ##import ipdb; ipdb.set_trace() # TODO
         for layer in self:
             if isinstance(layer, TimestepBlock):
                 x = layer(x, emb)
@@ -253,7 +253,7 @@ class ResBlock(TimestepBlock):
         )
 
     def _forward(self, x, emb):
-        #import ipdb; ipdb.set_trace() # TODO
+        ##import ipdb; ipdb.set_trace() # TODO
         if self.updown:
             in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
             h = in_rest(x)
@@ -468,7 +468,7 @@ class UNetModel(nn.Module):
         n_embed=None,                     # custom support for prediction of discrete ids into codebook of first stage vq model
         legacy=True,
     ):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         if use_spatial_transformer:
             assert context_dim is not None, 'Fool!! You forgot to include the dimension of your cross-attention conditioning...'
@@ -588,7 +588,7 @@ class UNetModel(nn.Module):
                 ds *= 2
                 self._feature_size += ch
 
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         if num_head_channels == -1:
             dim_head = ch // num_heads
         else:
@@ -626,7 +626,7 @@ class UNetModel(nn.Module):
         )
         self._feature_size += ch
         
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         self.output_blocks = nn.ModuleList([])
         for level, mult in list(enumerate(channel_mult))[::-1]:
             for i in range(num_res_blocks + 1):
@@ -683,7 +683,7 @@ class UNetModel(nn.Module):
                 self.output_blocks.append(TimestepEmbedSequential(*layers))
                 self._feature_size += ch
         
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         self.out = nn.Sequential(
             normalization(ch),
             nn.SiLU(),
@@ -721,7 +721,7 @@ class UNetModel(nn.Module):
         :param y: an [N] Tensor of labels, if class-conditional.
         :return: an [N x C x ...] Tensor of outputs.
         """
-        import ipdb; ipdb.set_trace() # UNetModel's forward
+        #import ipdb; ipdb.set_trace() # UNetModel's forward
         assert (y is not None) == (
             self.num_classes is not None
         ), "must specify y if and only if the model is class-conditional"
@@ -745,7 +745,7 @@ class UNetModel(nn.Module):
         if self.predict_codebook_ids:
             return self.id_predictor(h)
         else:
-            import ipdb; ipdb.set_trace() # done UNetModel's forward
+            #import ipdb; ipdb.set_trace() # done UNetModel's forward
             return self.out(h)
 
 class EncoderUNetModel(nn.Module):

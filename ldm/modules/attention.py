@@ -209,7 +209,7 @@ class BasicTransformerBlock(nn.Module):
         return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
 
     def _forward(self, x, context=None):
-        #import ipdb; ipdb.set_trace() # TODO
+        ##import ipdb; ipdb.set_trace() # TODO
         x = self.attn1(self.norm1(x)) + x
         x = self.attn2(self.norm2(x), context=context) + x
         x = self.ff(self.norm3(x)) + x
@@ -225,7 +225,7 @@ class SpatialTransformer(nn.Module):
     """
     def __init__(self, in_channels, n_heads, d_head,
                  depth=1, dropout=0., context_dim=None):
-        #import ipdb; ipdb.set_trace()
+        ##import ipdb; ipdb.set_trace()
         super().__init__()
         self.in_channels = in_channels
         inner_dim = n_heads * d_head
@@ -250,7 +250,7 @@ class SpatialTransformer(nn.Module):
 
     def forward(self, x, context=None):
         # note: if no context is given, cross-attention defaults to self-attention
-        #import ipdb; ipdb.set_trace() # TODO
+        ##import ipdb; ipdb.set_trace() # TODO
         b, c, h, w = x.shape
         x_in = x
         x = self.norm(x)

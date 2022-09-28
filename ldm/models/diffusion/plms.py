@@ -10,7 +10,7 @@ from ldm.modules.diffusionmodules.util import make_ddim_sampling_parameters, mak
 
 class PLMSSampler(object):
     def __init__(self, model, schedule="linear", **kwargs):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         self.model = model
         self.ddpm_num_timesteps = model.num_timesteps
@@ -23,7 +23,7 @@ class PLMSSampler(object):
         setattr(self, name, attr)
 
     def make_schedule(self, ddim_num_steps, ddim_discretize="uniform", ddim_eta=0., verbose=True):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         if ddim_eta != 0:
             raise ValueError('ddim_eta must be 0 for PLMS')
         self.ddim_timesteps = make_ddim_timesteps(ddim_discr_method=ddim_discretize, num_ddim_timesteps=ddim_num_steps,
@@ -81,7 +81,7 @@ class PLMSSampler(object):
                # this has to come in the same format as the conditioning, # e.g. as encoded tokens, ...
                **kwargs
                ):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         if conditioning is not None:
             if isinstance(conditioning, dict):
                 cbs = conditioning[list(conditioning.keys())[0]].shape[0]
@@ -121,7 +121,7 @@ class PLMSSampler(object):
                       mask=None, x0=None, img_callback=None, log_every_t=100,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                       unconditional_guidance_scale=1., unconditional_conditioning=None,):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         device = self.model.betas.device
         b = shape[0]
         if x_T is None:
@@ -144,7 +144,7 @@ class PLMSSampler(object):
         old_eps = []
 
         for i, step in enumerate(iterator):
-            import ipdb; ipdb.set_trace()
+            #import ipdb; ipdb.set_trace()
             index = total_steps - i - 1
             ts = torch.full((b,), step, device=device, dtype=torch.long)
             ts_next = torch.full((b,), time_range[min(i + 1, len(time_range) - 1)], device=device, dtype=torch.long)
@@ -171,7 +171,7 @@ class PLMSSampler(object):
             if index % log_every_t == 0 or index == total_steps - 1:
                 intermediates['x_inter'].append(img)
                 intermediates['pred_x0'].append(pred_x0)
-            import ipdb; ipdb.set_trace()
+            #import ipdb; ipdb.set_trace()
 
         return img, intermediates
 
@@ -179,8 +179,8 @@ class PLMSSampler(object):
     def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                       unconditional_guidance_scale=1., unconditional_conditioning=None, old_eps=None, t_next=None):
-        import ipdb; ipdb.set_trace()
-        b, *_, device = *x.shape, x.device
+        #import ipdb; ipdb.set_trace()
+        b, *_, device = *x.shape, x.device # b = batch size
 
         def get_model_output(x, t):
             if unconditional_conditioning is None or unconditional_guidance_scale == 1.:
@@ -224,13 +224,13 @@ class PLMSSampler(object):
 
         e_t = get_model_output(x, t)
         # TODO check the zhejiang U's ICLR 2022 paper: Pseudo Numerical Methods for Diffusion Models on Manifolds,https://arxiv.org/pdf/2202.09778.pdf 
-        if len(old_eps) == 0: # equation 22 TODO
+        if len(old_eps) == 0: # equation 22 TODO (page 13)
             # Pseudo Improved Euler (2nd order)
             x_prev, pred_x0 = get_x_prev_and_pred_x0(e_t, index)
             e_t_next = get_model_output(x_prev, t_next) # NOTE call 
             e_t_prime = (e_t + e_t_next) / 2
         elif len(old_eps) == 1:
-            # 2nd order Pseudo Linear Multistep (Adams-Bashforth)
+            # 2nd order Pseudo Linear Multistep (Adams-Bashforth) https://en.wikipedia.org/wiki/Linear_multistep_method
             e_t_prime = (3 * e_t - old_eps[-1]) / 2
         elif len(old_eps) == 2:
             # 3nd order Pseudo Linear Multistep (Adams-Bashforth)
@@ -238,8 +238,8 @@ class PLMSSampler(object):
         elif len(old_eps) >= 3:
             # 4nd order Pseudo Linear Multistep (Adams-Bashforth)
             e_t_prime = (55 * e_t - 59 * old_eps[-1] + 37 * old_eps[-2] - 9 * old_eps[-3]) / 24
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         x_prev, pred_x0 = get_x_prev_and_pred_x0(e_t_prime, index)
 
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         return x_prev, pred_x0, e_t

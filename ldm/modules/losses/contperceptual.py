@@ -13,7 +13,7 @@ class LPIPSWithDiscriminator(nn.Module):
                  disc_num_layers=3, disc_in_channels=3, disc_factor=1.0, disc_weight=1.0,
                  perceptual_weight=1.0, use_actnorm=False, disc_conditional=False,
                  disc_loss="hinge"):
-        #import ipdb; ipdb.set_trace()
+        ##import ipdb; ipdb.set_trace()
         super().__init__()
         assert disc_loss in ["hinge", "vanilla"]
         self.kl_weight = kl_weight
@@ -34,7 +34,7 @@ class LPIPSWithDiscriminator(nn.Module):
         self.disc_conditional = disc_conditional
 
     def calculate_adaptive_weight(self, nll_loss, g_loss, last_layer=None):
-        #import ipdb; ipdb.set_trace()
+        ##import ipdb; ipdb.set_trace()
         if last_layer is not None:
             nll_grads = torch.autograd.grad(nll_loss, last_layer, retain_graph=True)[0] # NOTE paper equation (7)! nll_loss is from rec_loss (reconstruction loss): Delta_{G_L}[L_rec] and L_rec = rec_loss, G_L=last layer
             g_grads = torch.autograd.grad(g_loss, last_layer, retain_graph=True)[0] # Delta_{G_L}[L_GAN], generator_loss with four modules...
@@ -51,7 +51,7 @@ class LPIPSWithDiscriminator(nn.Module):
     def forward(self, inputs, reconstructions, posteriors, optimizer_idx,
                 global_step, last_layer=None, cond=None, split="train",
                 weights=None):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # reconstruction loss = rec_loss, 重建loss
         rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous()) # inputs.shape=[1, 3, 256, 256]
 
@@ -89,7 +89,7 @@ class LPIPSWithDiscriminator(nn.Module):
             else:
                 d_weight = torch.tensor(0.0)
 
-            import ipdb; ipdb.set_trace()
+            #import ipdb; ipdb.set_trace()
             disc_factor = adopt_weight(self.disc_factor, global_step, threshold=self.discriminator_iter_start)
             # threshold=50001, 目的：前50000个iteration，都是disc_factor=0，理由：希望先好好地集中训练autoencoder，并且ignore gan loss，稳定之后，开始慢慢地开始gan的loss下的train！
 

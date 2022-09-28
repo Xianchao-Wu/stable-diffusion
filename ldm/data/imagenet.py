@@ -171,7 +171,7 @@ class ImageNetTrain(ImageNetBase):
             if not os.path.exists(datadir):
                 path = os.path.join(self.root, self.FILES[0])
                 if not os.path.exists(path) or not os.path.getsize(path)==self.SIZES[0]:
-                    import ipdb; ipdb.set_trace() # at requires future==0.16.0, yet pytorch-lightning requires future==0.18.2, bad...
+                    # TODO import ipdb; ipdb.set_trace() # at requires future==0.16.0, yet pytorch-lightning requires future==0.18.2, bad...
                     import academictorrents as at
                     atpath = at.get(self.AT_HASH, datastore=self.root)
                     assert atpath == path
@@ -237,7 +237,7 @@ class ImageNetValidation(ImageNetBase):
             if not os.path.exists(datadir):
                 path = os.path.join(self.root, self.FILES[0])
                 if not os.path.exists(path) or not os.path.getsize(path)==self.SIZES[0]:
-                    import ipdb; ipdb.set_trace() # TODO
+                    #import ipdb; ipdb.set_trace() # TODO
                     import academictorrents as at
                     atpath = at.get(self.AT_HASH, datastore=self.root)
                     assert atpath == path

@@ -227,7 +227,7 @@ def main():
         default="autocast"
     )
     opt = parser.parse_args()
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     if opt.laion400m:
         print("Falling back to LAION 400M model...")
         opt.config = "configs/latent-diffusion/txt2img-1p4B-eval.yaml"
@@ -241,7 +241,7 @@ def main():
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     if opt.plms:
         sampler = PLMSSampler(model)
     else:
@@ -285,7 +285,7 @@ def main():
                 all_samples = list()
                 for n in trange(opt.n_iter, desc="Sampling"):
                     for prompts in tqdm(data, desc="data"):
-                        import ipdb; ipdb.set_trace()
+                        #import ipdb; ipdb.set_trace()
                         uc = None # empty text prompt's encoded tensor
                         if opt.scale != 1.0:
                             uc = model.get_learned_conditioning(batch_size * [""]) # empty text sequence

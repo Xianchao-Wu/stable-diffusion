@@ -456,7 +456,7 @@ if __name__ == "__main__":
     #           target: importpath
     #           params:
     #               key: value
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
     # add cwd for convenience and to make classes in this file available when
@@ -530,10 +530,10 @@ if __name__ == "__main__":
             cpu = False
         trainer_opt = argparse.Namespace(**trainer_config)
         lightning_config.trainer = trainer_config
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # model
         model = instantiate_from_config(config.model)
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # trainer and callbacks
         trainer_kwargs = dict()
 
@@ -658,13 +658,13 @@ if __name__ == "__main__":
 
         trainer = Trainer.from_argparse_args(trainer_opt, **trainer_kwargs)
         trainer.logdir = logdir  ###
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # data
         data = instantiate_from_config(config.data)
         # NOTE according to https://pytorch-lightning.readthedocs.io/en/latest/datamodules.html
         # calling these ourselves should not be necessary but it is.
         # lightning still takes care of proper multiprocessing though
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         data.prepare_data() # TODO important!
 
         data.setup()
@@ -714,7 +714,7 @@ if __name__ == "__main__":
         # TODO do not work at Windows
         #signal.signal(signal.SIGUSR1, melk)
         #signal.signal(signal.SIGUSR2, divein)
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         # run
         if opt.train:
             try:

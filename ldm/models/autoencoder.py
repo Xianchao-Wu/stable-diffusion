@@ -29,7 +29,7 @@ class VQModel(pl.LightningModule):
                  sane_index_shape=False, # tell vector quantizer to return indices as bhw
                  use_ema=False
                  ):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         super().__init__()
         self.embed_dim = embed_dim
         self.n_embed = n_embed
@@ -37,7 +37,7 @@ class VQModel(pl.LightningModule):
         self.encoder = Encoder(**ddconfig)
         self.decoder = Decoder(**ddconfig)
         self.loss = instantiate_from_config(lossconfig)
-        import ipdb; ipdb.set_trace() # TODO need to check the details of vector quantizer
+        #import ipdb; ipdb.set_trace() # TODO need to check the details of vector quantizer
         self.quantize = VectorQuantizer(n_embed, embed_dim, beta=0.25,
                                         remap=remap,
                                         sane_index_shape=sane_index_shape)
@@ -337,7 +337,7 @@ class AutoencoderKL(pl.LightningModule):
         return dec # [1, 3, 256, 256]
 
     def forward(self, input, sample_posterior=True):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         posterior = self.encode(input)
         if sample_posterior:
             z = posterior.sample() # Here, [1, 3, 64, 64], x = mu + sigma * z; 在进decoder之前，搞的采样，然后把z给decoder! NOTE
@@ -354,7 +354,7 @@ class AutoencoderKL(pl.LightningModule):
         return x
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         inputs = self.get_input(batch, self.image_key) # [1, 256, 256, 3] to [1, 3, 256, 256]
         reconstructions, posterior = self(inputs) # call the forward method of this class! NOTE
         # TODO 这儿可以优化，因为是同一个batch进来，其实不需要再次self(inputs)了！！！
@@ -376,7 +376,7 @@ class AutoencoderKL(pl.LightningModule):
             return discloss
 
     def validation_step(self, batch, batch_idx):
-        import ipdb; ipdb.set_trace() # NOTE this is validation step, so no grad is required!!! only forward!
+        #import ipdb; ipdb.set_trace() # NOTE this is validation step, so no grad is required!!! only forward!
         inputs = self.get_input(batch, self.image_key)
         reconstructions, posterior = self(inputs)
         aeloss, log_dict_ae = self.loss(inputs, reconstructions, posterior, 0, self.global_step,
@@ -391,7 +391,7 @@ class AutoencoderKL(pl.LightningModule):
         return self.log_dict
 
     def configure_optimizers(self):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         lr = self.learning_rate
         # for training autoencoder (ae), with encoder, decoder, quant_conv and post_quant_conv (four modules) NOTE
         opt_ae = torch.optim.Adam(list(self.encoder.parameters())+
