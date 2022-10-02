@@ -45,8 +45,8 @@ def numpy_to_pil(images):
     return pil_images
 
 
-def load_model_from_config(config, ckpt, verbose=False):
-    print(f"Loading model from {ckpt}")
+def load_model_from_config(config, ckpt, verbose=False, device="cuda:0"):
+    print(f"Loading model from {ckpt} to device {device}")
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -60,7 +60,8 @@ def load_model_from_config(config, ckpt, verbose=False):
         print("unexpected keys:")
         print(u)
 
-    model.cuda()
+    #model.cuda()
+    model = model.to(device)
     model.eval()
     return model
 
@@ -103,6 +104,13 @@ def main():
         nargs="?",
         default="a painting of a virus monster playing guitar",
         help="the prompt to render"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        nargs="?",
+        default="cuda:0",
+        help="which gpu device to use"
     )
     parser.add_argument(
         "--outdir",
@@ -237,9 +245,11 @@ def main():
     seed_everything(opt.seed)
     
     config = OmegaConf.load(f"{opt.config}")
-    model = load_model_from_config(config, f"{opt.ckpt}")
+    #model = load_model_from_config(config, f"{opt.ckpt}")
 
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    #device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device(opt.device) if torch.cuda.is_available() else torch.device("cpu")
+    model = load_model_from_config(config, f"{opt.ckpt}", device=device)
     model = model.to(device)
     #import ipdb; ipdb.set_trace()
     if opt.plms:
@@ -285,47 +295,50 @@ def main():
                 all_samples = list()
                 for n in trange(opt.n_iter, desc="Sampling"):
                     for prompts in tqdm(data, desc="data"):
-                        #import ipdb; ipdb.set_trace()
-                        print('prompts=', prompts)
-                        uc = None # empty text prompt's encoded tensor
-                        if opt.scale != 1.0:
-                            uc = model.get_learned_conditioning(batch_size * [""]) # empty text sequence
-                        if isinstance(prompts, tuple):
-                            prompts = list(prompts)
-                        c = model.get_learned_conditioning(prompts) # [1, 77, 768]
-                        shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
-                        samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
-                                                         conditioning=c,
-                                                         batch_size=opt.n_samples,
-                                                         shape=shape,
-                                                         verbose=False,
-                                                         unconditional_guidance_scale=opt.scale,
-                                                         unconditional_conditioning=uc,
-                                                         eta=opt.ddim_eta,
-                                                         x_T=start_code)
+                        try:
+                            #import ipdb; ipdb.set_trace()
+                            print('prompts=', prompts)
+                            uc = None # empty text prompt's encoded tensor
+                            if opt.scale != 1.0:
+                                uc = model.get_learned_conditioning(batch_size * [""]) # empty text sequence
+                            if isinstance(prompts, tuple):
+                                prompts = list(prompts)
+                            c = model.get_learned_conditioning(prompts) # [1, 77, 768]
+                            shape = [opt.C, opt.H // opt.f, opt.W // opt.f]
+                            samples_ddim, _ = sampler.sample(S=opt.ddim_steps,
+                                                             conditioning=c,
+                                                             batch_size=opt.n_samples,
+                                                             shape=shape,
+                                                             verbose=False,
+                                                             unconditional_guidance_scale=opt.scale,
+                                                             unconditional_conditioning=uc,
+                                                             eta=opt.ddim_eta,
+                                                             x_T=start_code)
 
-                        x_samples_ddim = model.decode_first_stage(samples_ddim) # NOTE call autoencoder's decoder, from [1, 4, 64, 64] back to [1, 3, 512, 512] (image recover from latent space)
-                        x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
-                        x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
-                        
-                        # TODO
-                        x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
+                            x_samples_ddim = model.decode_first_stage(samples_ddim) # NOTE call autoencoder's decoder, from [1, 4, 64, 64] back to [1, 3, 512, 512] (image recover from latent space)
+                            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                            x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
+                            
+                            # TODO
+                            x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
 
 
-                        x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
+                            x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
 
-                        if not opt.skip_save:
-                            for x_sample in x_checked_image_torch:
-                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                                img = Image.fromarray(x_sample.astype(np.uint8))
-                                img = put_watermark(img, wm_encoder)
-                                img_name = '{:05}.png'.format(base_count)
-                                print(prompts, '\t', img_name)
-                                img.save(os.path.join(sample_path, f"{base_count:05}.png"))
-                                base_count += 1
+                            if not opt.skip_save:
+                                for x_sample in x_checked_image_torch:
+                                    x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                                    img = Image.fromarray(x_sample.astype(np.uint8))
+                                    img = put_watermark(img, wm_encoder)
+                                    img_name = '{:05}.png'.format(base_count)
+                                    print(prompts, '\t', img_name)
+                                    img.save(os.path.join(sample_path, f"{base_count:05}.png"))
+                                    base_count += 1
 
-                        if not opt.skip_grid:
-                            all_samples.append(x_checked_image_torch)
+                            if not opt.skip_grid:
+                                all_samples.append(x_checked_image_torch)
+                        except:
+                            print('error... and skip')
 
                 if not opt.skip_grid:
                     # additionally, save as grid
