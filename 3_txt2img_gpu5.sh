@@ -15,11 +15,12 @@
 
 #infn2="prompts2.txt"
 #infn3="prompts3.txt"
-infn="x04" # TODO
+hw=1024
+infn="prompts_txt/x04" # TODO
 
 #outdir1="outdir1" # ddim_steps=50, seed=42
 #outdir2="outdir2" # ddim_steps=200, seed=888
-outdir="outdir_x04" # TODO ddim_steps=200, seed=42, reuse "stable diffusion" paper's prompts and 30 artists
+outdir="outdir_x04_$hw" # TODO ddim_steps=200, seed=42, reuse "stable diffusion" paper's prompts and 30 artists
 
 # TODO device
 # TODO yaml
@@ -28,11 +29,11 @@ python scripts/txt2img_select_gpu.py \
 	--from-file $infn \
 	--outdir $outdir \
 	--ddim_eta 1.0 \
-	--n_samples 5 \
+	--n_samples 1 \
 	--n_iter 5 \
 	--ddim_steps 200 \
-	--H 512 \
-	--W 512 \
+	--H $hw \
+	--W $hw \
 	--scale 5.0 \
 	--seed 42 \
 	--device "cuda:5" \
