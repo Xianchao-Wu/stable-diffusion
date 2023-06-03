@@ -337,7 +337,8 @@ def main():
 
                             if not opt.skip_grid:
                                 all_samples.append(x_checked_image_torch)
-                        except:
+                        except Exception as ex:
+                            print(ex)
                             print('error... and skip')
 
                 if not opt.skip_grid:

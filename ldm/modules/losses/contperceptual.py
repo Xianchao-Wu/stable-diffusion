@@ -67,7 +67,7 @@ class LPIPSWithDiscriminator(nn.Module):
         weighted_nll_loss = torch.sum(weighted_nll_loss) / weighted_nll_loss.shape[0]
         nll_loss = torch.sum(nll_loss) / nll_loss.shape[0]
         kl_loss = posteriors.kl() # NOTE important, KL for a gaussian distribution!
-        kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+        kl_loss = torch.sum(kl_loss) / kl_loss.shape[0] # NOTE 这是按照batch size做一个均值
 
         # now the GAN part
         if optimizer_idx == 0:

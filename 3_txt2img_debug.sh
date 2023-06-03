@@ -7,11 +7,12 @@
 #!/bin/bash
 
 # debug only
-#python -m ipdb scripts/txt2img.py --plms \
-#	--ckpt "models/ldm/CompVis/stable-diffusion-v-1-4-original/stable-diffusion-v-1-4-original/sd-v1-4.ckpt"
+python -m ipdb scripts/txt2img.py --plms \
+	--ckpt "models/ldm/CompVis/stable-diffusion-v-1-4-original/stable-diffusion-v-1-4-original/sd-v1-4.ckpt" \
+	--config "configs/stable-diffusion/v1-inference.yaml" \
+	--prompt "a painting of last dinner by vincent van gogh"
 
-# configs/stable-diffusion/v1-inference.yaml
-#--prompt "a painting of last dinner by vincent van gogh" \
+exit 0
 
 #hw=1024
 #hw=2048 # failed NOTE TODO

@@ -372,7 +372,7 @@ class Encoder(nn.Module):
                  attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
                  resolution, z_channels, double_z=True, use_linear_attn=False, attn_type="vanilla",
                  **ignore_kwargs):
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         super().__init__()
         if use_linear_attn: attn_type = "linear"
         self.ch = ch
@@ -436,7 +436,7 @@ class Encoder(nn.Module):
 
     def forward(self, x):
         # timestep embedding
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         temb = None
         # downsampling
         hs = [self.conv_in(x)]
@@ -466,7 +466,7 @@ class Decoder(nn.Module):
                  attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
                  resolution, z_channels, give_pre_end=False, tanh_out=False, use_linear_attn=False,
                  attn_type="vanilla", **ignorekwargs):
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         super().__init__()
         if use_linear_attn: attn_type = "linear"
         self.ch = ch
@@ -537,7 +537,7 @@ class Decoder(nn.Module):
 
     def forward(self, z):
         #assert z.shape[1:] == self.z_shape[1:]
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         self.last_z_shape = z.shape
         # timestep embedding
         temb = None

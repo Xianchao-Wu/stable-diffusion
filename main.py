@@ -497,16 +497,16 @@ if __name__ == "__main__":
         if opt.name:
             name = "_" + opt.name
         elif opt.base:
-            cfg_fname = os.path.split(opt.base[0])[-1]
-            cfg_name = os.path.splitext(cfg_fname)[0]
-            name = "_" + cfg_name
+            cfg_fname = os.path.split(opt.base[0])[-1] # 'autoencoder_kl_32x32x4.yaml'
+            cfg_name = os.path.splitext(cfg_fname)[0] # 'autoencoder_kl_32x32x4'
+            name = "_" + cfg_name # '_autoencoder_kl_32x32x4'
         else:
             name = ""
-        nowname = now + name + opt.postfix
-        logdir = os.path.join(opt.logdir, nowname)
+        nowname = now + name + opt.postfix # '2023-06-03T02-19-38_autoencoder_kl_32x32x4'
+        logdir = os.path.join(opt.logdir, nowname) # 'logs/2023-06-03T02-19-38_autoencoder_kl_32x32x4'
 
-    ckptdir = os.path.join(logdir, "checkpoints")
-    cfgdir = os.path.join(logdir, "configs")
+    ckptdir = os.path.join(logdir, "checkpoints") # 'logs/2023-06-03T02-19-38_autoencoder_kl_32x32x4/checkpoints'
+    cfgdir = os.path.join(logdir, "configs") # logs/2023-06-03T02-19-38_autoencoder_kl_32x32x4/configs
     seed_everything(opt.seed)
 
     try:
@@ -530,7 +530,7 @@ if __name__ == "__main__":
             cpu = False
         trainer_opt = argparse.Namespace(**trainer_config)
         lightning_config.trainer = trainer_config
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         # model
         model = instantiate_from_config(config.model)
         #import ipdb; ipdb.set_trace()
@@ -655,7 +655,7 @@ if __name__ == "__main__":
             del callbacks_cfg['ignore_keys_callback']
 
         trainer_kwargs["callbacks"] = [instantiate_from_config(callbacks_cfg[k]) for k in callbacks_cfg]
-
+        import ipdb; ipdb.set_trace()
         trainer = Trainer.from_argparse_args(trainer_opt, **trainer_kwargs)
         trainer.logdir = logdir  ###
         #import ipdb; ipdb.set_trace()

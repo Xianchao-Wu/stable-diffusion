@@ -23,32 +23,37 @@ class DiracDistribution(AbstractDistribution):
 
 class DiagonalGaussianDistribution(object):
     def __init__(self, parameters, deterministic=False):
+        import ipdb; ipdb.set_trace()
         self.parameters = parameters
-        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1) # 切割一下, [1, 3, 64, 64] and [1, 3, 64, 64]
+        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1) # 切割一下, [1, 3, 64, 64]=均值 and [1, 3, 64, 64]=方差的对数
         self.logvar = torch.clamp(self.logvar, -30.0, 20.0)
         self.deterministic = deterministic
-        self.std = torch.exp(0.5 * self.logvar)
-        self.var = torch.exp(self.logvar)
+        self.std = torch.exp(0.5 * self.logvar) # 这是从self.logvar，现算出来std=standard deviation=标准方差
+        self.var = torch.exp(self.logvar) # 这是从self.logvar，现算出来方差 NOTE`
         if self.deterministic:
             self.var = self.std = torch.zeros_like(self.mean).to(device=self.parameters.device)
         # 这就是构造了一个高斯分布！带有mean和var的！
     def sample(self):
         #import ipdb; ipdb.set_trace()
-        x = self.mean + self.std * torch.randn(self.mean.shape).to(device=self.parameters.device)
+        x = self.mean + self.std * torch.randn(self.mean.shape).to(device=self.parameters.device) # device='cpu' interesting...
         return x
 
     def kl(self, other=None):
+        import ipdb; ipdb.set_trace()
         if self.deterministic:
             return torch.Tensor([0.])
         else:
-            # KL(p,q)=log(sigma_2/sigma_1) + [sigma_1^2 + (mu_1-mu_2)^2]/(2*sigma_2^2)-0.5
             if other is None:
+                # https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
                 # KL(p)=log(1/sigma_1) + [sigma_1^2 + mu_1^2]/2 - 0.5
                 #      =0.5 * [sigma_1^2 + mu_1^2 - 1 - log(sigma_1^2)]
                 return 0.5 * torch.sum(torch.pow(self.mean, 2)
                                        + self.var - 1.0 - self.logvar,
                                        dim=[1, 2, 3]) # Here NOTE, why?
+                # e.g., [12, 4, 32, 32] -> [12], 对后面的4*32*32求和, 最终得到的是一个标量 for each seq -> [12] 
             else:
+                # KL(p,q)=log(sigma_2/sigma_1) + 
+                #         + [sigma_1^2 + (mu_1-mu_2)^2]/(2*sigma_2^2)-0.5
                 return 0.5 * torch.sum(
                     torch.pow(self.mean - other.mean, 2) / other.var
                     + self.var / other.var - 1.0 - self.logvar + other.logvar,

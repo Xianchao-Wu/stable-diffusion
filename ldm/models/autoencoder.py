@@ -294,13 +294,13 @@ class AutoencoderKL(pl.LightningModule):
                  colorize_nlabels=None,
                  monitor=None,
                  ):
-        #import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         super().__init__()
-        self.image_key = image_key
+        self.image_key = image_key # 'image'
         self.encoder = Encoder(**ddconfig) # NOTE 
         self.decoder = Decoder(**ddconfig)
         self.loss = instantiate_from_config(lossconfig) # TODO important
-        #import ipdb; ipdb.set_trace(); 一个感知loss + 一个对抗loss 
+        import ipdb; ipdb.set_trace()# ; 一个感知loss + 一个对抗loss 
         # a perceptual loss + an adversertial loss
         assert ddconfig["double_z"]
         self.quant_conv = torch.nn.Conv2d(2*ddconfig["z_channels"], 2*embed_dim, 1)
@@ -326,6 +326,7 @@ class AutoencoderKL(pl.LightningModule):
         print(f"Restored from {path}")
 
     def encode(self, x):
+        import ipdb; ipdb.set_trace()
         h = self.encoder(x) # h.shape=[1, 6, 64, 64]
         moments = self.quant_conv(h) # Conv2d(6, 6, kernel_size=(1,1), stride=(1,1)), -> [1, 6, 64, 64]
         posterior = DiagonalGaussianDistribution(moments) # 这是创建了一个高斯分布，这个分布的名字是"posterior"!
@@ -337,10 +338,11 @@ class AutoencoderKL(pl.LightningModule):
         return dec # [1, 3, 256, 256]
 
     def forward(self, input, sample_posterior=True):
-        #import ipdb; ipdb.set_trace()
-        posterior = self.encode(input)
+        import ipdb; ipdb.set_trace()
+        posterior = self.encode(input) # input=[batch, 3, 256, 256]; posterior=<ldm.modules.distributions.distributions.DiagonalGaussianDistribution object at 0x7fda759b2940>, 
         if sample_posterior:
-            z = posterior.sample() # Here, [1, 3, 64, 64], x = mu + sigma * z; 在进decoder之前，搞的采样，然后把z给decoder! NOTE
+            z = posterior.sample() # Here, [1, 3, 64, 64], x = mu + sigma * z; 在进decoder之前，搞的采样，然后把z给decoder! NOTE  (x-mu)/sigma = z ~ N(0, 1), z to x, z*sigma + mu = x
+
         else:
             z = posterior.mode() 
         dec = self.decode(z)
